@@ -4,6 +4,7 @@ const app = express()
 
 const { Client } = require('@notionhq/client')
 const notion = new Client({ auth: process.env.NOTION_KEY })
+const port = process.env.PORT || 3000
 
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'))
@@ -12,10 +13,9 @@ app.use(express.json()) // for parsing application/json
 DATABASE_ID = process.env.DATABASE_ID
 
 // http://expressjs.com/en/starter/basic-routing.html
-app.get('/', function (request, response) {
-   response.sendFile(__dirname + '/views/index.html')
+app.get('/', (req, res) => {
+   res.send('Hello, World!')
 })
-
 // Create new database. The page ID is set in the environment variables.
 app.post('/databases', async function (request, response) {
    const pageId = process.env.NOTION_PAGE_ID
@@ -298,6 +298,6 @@ app.post('/blocks', async function (request, response) {
 })
 
 // listen for requests :)
-const listener = app.listen(process.env.PORT, function () {
-   console.log('Your app is listening on port ' + listener.address().port)
+app.listen(port, function () {
+   console.log('Your app is listening on port ' + port)
 })
