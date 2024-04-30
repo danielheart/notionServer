@@ -1,112 +1,305 @@
-require('dotenv').config();
+require('dotenv').config()
+const express = require('express')
+const app = express()
 
-const express = require('express');
-const app = express();
-const { sql } = require('@vercel/postgres');
+const { Client } = require('@notionhq/client')
+const notion = new Client({ auth: process.env.NOTION_KEY })
+const port = process.env.PORT || 3000
 
-const bodyParser = require('body-parser');
-const path = require('path');
+// http://expressjs.com/en/starter/static-files.html
+app.use(express.static('public'))
+app.use(express.json()) // for parsing application/json
 
-// Create application/x-www-form-urlencoded parser
-const urlencodedParser = bodyParser.urlencoded({ extended: false });
+DATABASE_ID = process.env.DATABASE_ID
 
-app.use(express.static('public'));
+// http://expressjs.com/en/starter/basic-routing.html
+app.get('/', (req, res) => {
+   res.send('Hello, World!')
+})
+// Create new database. The page ID is set in the environment variables.
+app.post('/databases', async function (request, response) {
+   const pageId = process.env.NOTION_PAGE_ID
+   const title = request.body.dbName
 
-app.get('/', function (req, res) {
-	res.sendFile(path.join(__dirname, '..', 'components', 'home.htm'));
-});
+   try {
+      const newDb = await notion.databases.create({
+         parent: {
+            type: 'page_id',
+            page_id: pageId,
+         },
+         title: [
+            {
+               type: 'text',
+               text: {
+                  content: title,
+               },
+            },
+         ],
+         properties: {
+            Name: {
+               title: {},
+            },
+         },
+      })
+      response.json({ message: 'success!', data: newDb })
+   } catch (error) {
+      response.json({ message: 'error', error })
+   }
+})
 
-app.get('/about', function (req, res) {
-	res.sendFile(path.join(__dirname, '..', 'components', 'about.htm'));
-});
+// Create new page. The database ID is provided in the web form.
+app.post('/pages', async function (request, response) {
+   const { dbID, pageName, header } = request.body
 
-app.get('/uploadUser', function (req, res) {
-	res.sendFile(path.join(__dirname, '..', 'components', 'user_upload_form.htm'));
-});
+   try {
+      const newPage = await notion.pages.create({
+         parent: {
+            type: 'database_id',
+            database_id: dbID,
+         },
+         properties: {
+            Name: {
+               title: [
+                  {
+                     text: {
+                        content: pageName,
+                     },
+                  },
+               ],
+            },
+         },
+         children: [
+            {
+               object: 'block',
+               heading_2: {
+                  rich_text: [
+                     {
+                        text: {
+                           content: header,
+                        },
+                     },
+                  ],
+               },
+            },
+         ],
+      })
+      response.json({ message: 'success!', data: newPage })
+   } catch (error) {
+      response.json({ message: 'error', error })
+   }
+})
+// Create new page. The database ID is provided in the web form.
+app.post('/saveWord', async function (request, response) {
+   const { word, phonetic, meanings, audioSrc, source } = request.body
+   console.log(word, phonetic, meanings, audioSrc, source)
+   const properties = {
+      Word: {
+         title: [
+            {
+               text: {
+                  content: word,
+               },
+            },
+         ],
+      },
+      Phonetics: {
+         rich_text: [
+            {
+               text: {
+                  content: phonetic,
+               },
+            },
+         ],
+      },
+      Meaning: {
+         rich_text: [
+            {
+               text: {
+                  content: meanings[0].definitions[0].definition,
+               },
+            },
+         ],
+      },
+      Example: {
+         rich_text: [
+            {
+               text: {
+                  content: meanings[0].definitions[0].example,
+               },
+            },
+         ],
+      },
+      State: {
+         select: {
+            name: 'New',
+         },
+      },
+      Source: {
+         rich_text: [
+            {
+               text: {
+                  content: source.title,
+                  link: {
+                     url: source.url,
+                  },
+               },
+            },
+         ],
+      },
+   }
+   const children = []
 
-app.post('/uploadSuccessful', urlencodedParser, async (req, res) => {
-	try {
-		await sql`INSERT INTO Users (Id, Name, Email) VALUES (${req.body.user_id}, ${req.body.name}, ${req.body.email});`;
-		res.status(200).send('<h1>User added successfully</h1>');
-	} catch (error) {
-		console.error(error);
-		res.status(500).send('Error adding user');
-	}
-});
+   // 添加词性和含义的文本块
+   meanings.forEach((meaning) => {
+      const partOfSpeech = meaning.partOfSpeech
+      children.push({
+         object: 'block',
+         type: 'paragraph',
+         paragraph: {
+            rich_text: [
+               {
+                  type: 'text',
+                  text: {
+                     content: partOfSpeech,
+                  },
+                  annotations: {
+                     italic: true,
+                     color: 'gray',
+                  },
+               },
+            ],
+         },
+      })
 
-app.get('/allUsers', async (req, res) => {
-	try {
-		const users = await sql`SELECT * FROM Users;`;
-		if (users && users.rows.length > 0) {
-			let tableContent = users.rows
-				.map(
-					(user) =>
-						`<tr>
-                        <td>${user.id}</td>
-                        <td>${user.name}</td>
-                        <td>${user.email}</td>
-                    </tr>`
-				)
-				.join('');
+      const definitions = meaning.definitions
+      definitions.forEach((definition, index) => {
+         const definitionText = definition.definition
+         const exampleText = definition.example
+         children.push({
+            object: 'block',
+            type: 'numbered_list_item',
+            numbered_list_item: {
+               rich_text: [
+                  {
+                     type: 'text',
+                     text: {
+                        content: `${definitionText}\n`,
+                     },
+                  },
+                  {
+                     type: 'text',
+                     text: {
+                        content: exampleText,
+                     },
+                     annotations: {
+                        color: 'gray',
+                     },
+                  },
+               ],
+            },
+         })
+      })
+   })
+   // 在项的详情中添加音频链接
+   if (audioSrc) {
+      if (audioSrc.endsWith('.mp3')) {
+         // 在项的详情中添加空行
+         children.push({
+            object: 'block',
+            type: 'paragraph',
+            paragraph: {
+               rich_text: [
+                  {
+                     type: 'text',
+                     text: {
+                        content: '',
+                     },
+                  },
+               ],
+            },
+         })
+         children.push({
+            object: 'block',
+            type: 'audio',
+            audio: {
+               external: {
+                  url: audioSrc,
+               },
+            },
+         })
+      } else {
+         children.push({
+            object: 'block',
+            type: 'paragraph',
+            paragraph: {
+               rich_text: [
+                  {
+                     type: 'text',
+                     text: {
+                        content: 'voice link',
+                        link: {
+                           url: audioSrc,
+                        },
+                     },
+                  },
+               ],
+            },
+         })
+      }
+   }
+   // console.log(properties, children)
+   try {
+      const start = performance.now()
+      await notion.pages.create({
+         parent: {
+            type: 'database_id',
+            database_id: DATABASE_ID,
+         },
+         properties: properties,
+         icon: {
+            type: 'emoji', // 使用内置的表情符号
+            emoji: '🐣', // 内置的孵化小鸡图标
+         },
+         children: children,
+      })
+      const end = performance.now()
+      console.log(end - start)
+      response.json({ message: 'success!' })
+   } catch (error) {
+      response.json({ message: 'error', error })
+   }
+})
+// Create new block (page content). The page ID is provided in the web form.
+app.post('/blocks', async function (request, response) {
+   const { pageID, content } = request.body
 
-			res.status(200).send(`
-                <html>
-                    <head>
-                        <title>Users</title>
-                        <style>
-                            body {
-                                font-family: Arial, sans-serif;
-                            }
-                            table {
-                                width: 100%;
-                                border-collapse: collapse;
-                                margin-bottom: 15px;
-                            }
-                            th, td {
-                                border: 1px solid #ddd;
-                                padding: 8px;
-                                text-align: left;
-                            }
-                            th {
-                                background-color: #f2f2f2;
-                            }
-                            a {
-                                text-decoration: none;
-                                color: #0a16f7;
-                                margin: 15px;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <h1>Users</h1>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>User ID</th>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${tableContent}
-                            </tbody>
-                        </table>
-                        <div>
-                            <a href="/">Home</a>
-                            <a href="/uploadUser">Add User</a>
-                        </div>
-                    </body>
-                </html>
-            `);
-		} else {
-			res.status(404).send('Users not found');
-		}
-	} catch (error) {
-		console.error(error);
-		res.status(500).send('Error retrieving users');
-	}
-});
+   try {
+      const newBlock = await notion.blocks.children.append({
+         block_id: pageID, // a block ID can be a page ID
+         children: [
+            {
+               // Use a paragraph as a default but the form or request can be updated to allow for other block types: https://developers.notion.com/reference/block#keys
+               paragraph: {
+                  rich_text: [
+                     {
+                        text: {
+                           content: content,
+                        },
+                     },
+                  ],
+               },
+            },
+         ],
+      })
+      response.json({ message: 'success!', data: newBlock })
+   } catch (error) {
+      response.json({ message: 'error', error })
+   }
+})
 
-app.listen(3000, () => console.log('Server ready on port 3000.'));
+// listen for requests :)
+app.listen(port, function () {
+   console.log('Your app is listening on port ' + port)
+})
 
-module.exports = app;
+module.exports = app
