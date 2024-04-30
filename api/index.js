@@ -1,6 +1,7 @@
 require('dotenv').config()
 const express = require('express')
 const app = express()
+const path = require('path')
 
 const { Client } = require('@notionhq/client')
 const notion = new Client({ auth: process.env.NOTION_KEY })
@@ -13,9 +14,20 @@ app.use(express.json()) // for parsing application/json
 DATABASE_ID = process.env.DATABASE_ID
 
 // http://expressjs.com/en/starter/basic-routing.html
-app.get('/', (req, res) => {
-   res.send('Hello, World!')
+app.get('/', function (req, res) {
+   res.sendFile(path.join(__dirname, '..', 'components', 'home.htm'))
 })
+
+app.get('/about', function (req, res) {
+   res.sendFile(path.join(__dirname, '..', 'components', 'about.htm'))
+})
+
+app.get('/uploadUser', function (req, res) {
+   res.sendFile(
+      path.join(__dirname, '..', 'components', 'user_upload_form.htm'),
+   )
+})
+
 // Create new database. The page ID is set in the environment variables.
 app.post('/databases', async function (request, response) {
    const pageId = process.env.NOTION_PAGE_ID
@@ -47,47 +59,6 @@ app.post('/databases', async function (request, response) {
    }
 })
 
-// Create new page. The database ID is provided in the web form.
-app.post('/pages', async function (request, response) {
-   const { dbID, pageName, header } = request.body
-
-   try {
-      const newPage = await notion.pages.create({
-         parent: {
-            type: 'database_id',
-            database_id: dbID,
-         },
-         properties: {
-            Name: {
-               title: [
-                  {
-                     text: {
-                        content: pageName,
-                     },
-                  },
-               ],
-            },
-         },
-         children: [
-            {
-               object: 'block',
-               heading_2: {
-                  rich_text: [
-                     {
-                        text: {
-                           content: header,
-                        },
-                     },
-                  ],
-               },
-            },
-         ],
-      })
-      response.json({ message: 'success!', data: newPage })
-   } catch (error) {
-      response.json({ message: 'error', error })
-   }
-})
 // Create new page. The database ID is provided in the web form.
 app.post('/saveWord', async function (request, response) {
    const { word, phonetic, meanings, audioSrc, source } = request.body
@@ -265,33 +236,6 @@ app.post('/saveWord', async function (request, response) {
       const end = performance.now()
       console.log(end - start)
       response.json({ message: 'success!' })
-   } catch (error) {
-      response.json({ message: 'error', error })
-   }
-})
-// Create new block (page content). The page ID is provided in the web form.
-app.post('/blocks', async function (request, response) {
-   const { pageID, content } = request.body
-
-   try {
-      const newBlock = await notion.blocks.children.append({
-         block_id: pageID, // a block ID can be a page ID
-         children: [
-            {
-               // Use a paragraph as a default but the form or request can be updated to allow for other block types: https://developers.notion.com/reference/block#keys
-               paragraph: {
-                  rich_text: [
-                     {
-                        text: {
-                           content: content,
-                        },
-                     },
-                  ],
-               },
-            },
-         ],
-      })
-      response.json({ message: 'success!', data: newBlock })
    } catch (error) {
       response.json({ message: 'error', error })
    }
