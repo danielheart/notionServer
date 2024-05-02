@@ -49,12 +49,12 @@ app.get('/redirect', async function (req, res) {
    if (result.ok) {
       const { botId, accessToken, databaseId, workspaceId } = result
       //store data to vercel cv
-      kv.set(botId, { accessToken, databaseId, workspaceId })
+      await kv.set(botId, { accessToken, databaseId, workspaceId })
 
       // set cookies
       const expireDate = new Date()
       expireDate.setFullYear(expireDate.getFullYear() + 10) // 设置 Cookie 的过期时间为十年后
-      const cookieOptions = { expires: expireDate, path: '/saveWord' }
+      const cookieOptions = { expires: expireDate, path: '/' }
       res.cookie('botId', botId, cookieOptions)
          .cookie('accessToken', accessToken, cookieOptions)
          .cookie('databaseId', databaseId, cookieOptions)
