@@ -173,7 +173,8 @@ async function saveWord(wordInfo, accessToken, databaseId) {
       })
       return { message: 'success!' }
    } catch (error) {
-      return { message: 'error', error }
+      console.log('error', error)
+      return { message: 'error' }
    }
 }
 module.exports = saveWord
