@@ -17,11 +17,11 @@ clientId = process.env.CLIENT_ID
 clientSecret = process.env.CLIENT_SECRET
 redirectUri = process.env.REDIRECT_URI
 
-// http://expressjs.com/en/starter/basic-routing.html
+// homepage: dictionary.danielhe.art
 app.get('/', function (req, res) {
    res.sendFile(path.join(__dirname, '..', 'components', 'home.htm'))
 })
-
+// get redirect link code to authroize notion
 app.get('/redirect', async function (req, res) {
    const { accessToken, botId, workspaceId, databaseId } = await getOauth(req)
 
@@ -29,7 +29,7 @@ app.get('/redirect', async function (req, res) {
       // set cookies
       const expireDate = new Date()
       expireDate.setFullYear(expireDate.getFullYear() + 10) // 设置 Cookie 的过期时间为十年后
-      const cookieOptions = { expires: expireDate, path: '/' }
+      const cookieOptions = { expires: expireDate, path: '/saveWord' }
       res.cookie('botId', botId, cookieOptions)
          .cookie('accessToken', accessToken, cookieOptions)
          .cookie('databaseId', databaseId, cookieOptions)
