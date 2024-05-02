@@ -29,9 +29,9 @@ app.get('/', function (req, res) {
 })
 // test
 app.get('/test', async function (req, res) {
-   const botId = 'my-bot-id'
-   const accessToken = 'my-access-token'
-   const databaseId = 'my-database-id'
+   const botId = '7b9f027f-c3b9-46f6-adb2-2707239f68d1'
+   const accessToken = 'secret_L3z6tdl6waQTm7XpRxSzHgke3VXpclZMOlzgtZGLHhY'
+   const databaseId = '78c82987-c683-4f80-b42d-2c0cca841246'
    const workspaceId = 'my-workspace-id'
 
    await kv.set(botId, { accessToken, databaseId, workspaceId })
