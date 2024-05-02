@@ -1,6 +1,7 @@
 const { Buffer } = require('node:buffer')
 const { Client } = require('@notionhq/client')
-
+const { NOTION_CLIENT_ID, NOTION_CLIENT_SECRET, NOTION_REDIRECT_URI } =
+   process.env
 async function getOauth(req) {
    const { code, error } = req.query
    if (error) {
@@ -10,7 +11,9 @@ async function getOauth(req) {
       }
    }
    // encode in base 64
-   const encoded = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
+   const encoded = Buffer.from(
+      `${NOTION_CLIENT_ID}:${NOTION_CLIENT_SECRET}`,
+   ).toString('base64')
    const response = await fetch('https://api.notion.com/v1/oauth/token', {
       method: 'POST',
       headers: {
@@ -21,7 +24,7 @@ async function getOauth(req) {
       body: JSON.stringify({
          grant_type: 'authorization_code',
          code: code,
-         redirect_uri: redirectUri,
+         redirect_uri: NOTION_REDIRECT_URI,
       }),
    })
 

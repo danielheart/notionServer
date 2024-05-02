@@ -1,5 +1,8 @@
+import { kv } from '@vercel/kv'
+
 require('dotenv').config()
 const express = require('express')
+
 const app = express()
 const path = require('path')
 
@@ -13,21 +16,42 @@ app.use(express.json()) // for parsing application/json
 const cookieParser = require('cookie-parser')
 app.use(cookieParser())
 
-clientId = process.env.CLIENT_ID
-clientSecret = process.env.CLIENT_SECRET
-redirectUri = process.env.REDIRECT_URI
+const {
+   NOTION_CLIENT_ID,
+   NOTION_REDIRECT_URI,
+   KV_REST_API_URL,
+   KV_REST_API_TOKEN,
+} = process.env
 
 // homepage: dictionary.danielhe.art
 app.get('/', function (req, res) {
    res.sendFile(path.join(__dirname, '..', 'components', 'home.htm'))
+})
+// test
+app.get('/test', async function (req, res) {
+   const botId = 'my-bot-id'
+   const accessToken = 'my-access-token'
+   const databaseId = 'my-database-id'
+   const workspaceId = 'my-workspace-id'
+
+   await kv.set(botId, { accessToken, databaseId, workspaceId })
+   const data = await kv.get(botId)
+   if (data) {
+      const { accessToken, databaseId, workspaceId } = data
+      // 使用 accessToken 和 databaseId
+   }
+   res.send(data)
 })
 // get redirect link code to authroize notion
 app.get('/redirect', async function (req, res) {
    const result = await getOauth(req)
 
    if (result.ok) {
-      // set cookies
       const { botId, accessToken, databaseId, workspaceId } = result
+      //store data to vercel cv
+      kv.set(botId, { accessToken, databaseId, workspaceId })
+
+      // set cookies
       const expireDate = new Date()
       expireDate.setFullYear(expireDate.getFullYear() + 10) // 设置 Cookie 的过期时间为十年后
       const cookieOptions = { expires: expireDate, path: '/saveWord' }
@@ -54,8 +78,8 @@ app.post('/saveWord', async function (req, res) {
       //
       console.log('redirect to get access')
       const authParams = new URLSearchParams({
-         client_id: clientId,
-         redirect_uri: redirectUri,
+         client_id: NOTION_CLIENT_ID,
+         redirect_uri: NOTION_REDIRECT_URI,
          response_type: 'code',
          owner: 'user',
       })
@@ -65,7 +89,7 @@ app.post('/saveWord', async function (req, res) {
 })
 
 // listen for requests :)
-app.listen(port, function () {
-   console.log('Your app is listening on port ' + port)
-})
+// app.listen(port, function () {
+//    console.log('Your app is listening on port ' + port)
+// })
 module.exports = app
