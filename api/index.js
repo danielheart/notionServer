@@ -23,9 +23,9 @@ app.get('/', function (req, res) {
 })
 // get redirect link code to authroize notion
 app.get('/redirect', async function (req, res) {
-   const { accessToken, botId, workspaceId, databaseId } = await getOauth(req)
+   const result = await getOauth(req)
 
-   if (databaseId) {
+   if (result.ok) {
       // set cookies
       const expireDate = new Date()
       expireDate.setFullYear(expireDate.getFullYear() + 10) // 设置 Cookie 的过期时间为十年后
@@ -36,7 +36,7 @@ app.get('/redirect', async function (req, res) {
          .send('Authorize Notion successfully')
       console.log('Cookie generated successfully')
    } else {
-      res.send('failed to authorize Notion')
+      res.send(result.message)
    }
 })
 

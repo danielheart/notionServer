@@ -2,9 +2,15 @@ const { Buffer } = require('node:buffer')
 const { Client } = require('@notionhq/client')
 
 async function getOauth(req) {
+   const { code, error } = req.query
+   if (error) {
+      return {
+         message: 'Failed to authorize Notion: access denied!',
+         ok: false,
+      }
+   }
    // encode in base 64
    const encoded = Buffer.from(`${clientId}:${clientSecret}`).toString('base64')
-   const code = req.query.code
    const response = await fetch('https://api.notion.com/v1/oauth/token', {
       method: 'POST',
       headers: {
@@ -43,9 +49,12 @@ async function getOauth(req) {
       // 设置页面id
       if (topLevelPages.length > 0) {
          pageId = topLevelPages[0].id
+      } else {
+         return { message: 'No page choosed!', ok: false }
       }
    } catch (error) {
       console.error('Error:', error)
+      return { message: 'error', ok: false }
    }
    //create database for storing words
    try {
@@ -95,13 +104,14 @@ async function getOauth(req) {
       databaseId = newDb.id
    } catch (error) {
       console.log({ message: 'error', error })
-      return { message: 'error', error }
+      return { message: 'error', ok: false }
    }
    return {
       accessToken,
       botId,
       workspaceId,
       databaseId,
+      ok: true,
    }
 }
 
