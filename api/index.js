@@ -27,6 +27,7 @@ app.get('/redirect', async function (req, res) {
 
    if (result.ok) {
       // set cookies
+      const { botId, accessToken, databaseId, workspaceId } = result
       const expireDate = new Date()
       expireDate.setFullYear(expireDate.getFullYear() + 10) // 设置 Cookie 的过期时间为十年后
       const cookieOptions = { expires: expireDate, path: '/saveWord' }
