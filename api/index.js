@@ -3,241 +3,63 @@ const express = require('express')
 const app = express()
 const path = require('path')
 
-const { Client } = require('@notionhq/client')
-const notion = new Client({ auth: process.env.NOTION_KEY })
 const port = process.env.PORT || 3000
 
+const saveWord = require('./saveWord')
+const getOauth = require('./getOauth')
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static('public'))
 app.use(express.json()) // for parsing application/json
+const cookieParser = require('cookie-parser')
+app.use(cookieParser())
 
-DATABASE_ID = process.env.DATABASE_ID
+clientId = process.env.CLIENT_ID
+clientSecret = process.env.CLIENT_SECRET
+redirectUri = process.env.REDIRECT_URI
 
 // http://expressjs.com/en/starter/basic-routing.html
 app.get('/', function (req, res) {
    res.sendFile(path.join(__dirname, '..', 'components', 'home.htm'))
 })
 
-app.get('/about', function (req, res) {
-   res.sendFile(path.join(__dirname, '..', 'components', 'about.htm'))
-})
+app.get('/redirect', async function (req, res) {
+   const { accessToken, botId, workspaceId, databaseId } = await getOauth(req)
 
-app.get('/uploadUser', function (req, res) {
-   res.sendFile(
-      path.join(__dirname, '..', 'components', 'user_upload_form.htm'),
-   )
-})
-
-// Create new database. The page ID is set in the environment variables.
-app.post('/databases', async function (request, response) {
-   const pageId = process.env.NOTION_PAGE_ID
-   const title = request.body.dbName
-
-   try {
-      const newDb = await notion.databases.create({
-         parent: {
-            type: 'page_id',
-            page_id: pageId,
-         },
-         title: [
-            {
-               type: 'text',
-               text: {
-                  content: title,
-               },
-            },
-         ],
-         properties: {
-            Name: {
-               title: {},
-            },
-         },
-      })
-      response.json({ message: 'success!', data: newDb })
-   } catch (error) {
-      response.json({ message: 'error', error })
+   if (databaseId) {
+      // set cookies
+      const expireDate = new Date()
+      expireDate.setFullYear(expireDate.getFullYear() + 10) // 设置 Cookie 的过期时间为十年后
+      const cookieOptions = { expires: expireDate, path: '/' }
+      res.cookie('botId', botId, cookieOptions)
+         .cookie('accessToken', accessToken, cookieOptions)
+         .cookie('databaseId', databaseId, cookieOptions)
+         .send('Authorize Notion successfully')
+      console.log('Cookie generated successfully')
+   } else {
+      res.send('failed to authorize Notion')
    }
 })
 
-// Create new page. The database ID is provided in the web form.
-app.post('/saveWord', async function (request, response) {
-   const { word, phonetic, meanings, audioSrc, source } = request.body
-   console.log(word, phonetic, meanings, audioSrc, source)
-   const properties = {
-      Word: {
-         title: [
-            {
-               text: {
-                  content: word,
-               },
-            },
-         ],
-      },
-      Phonetics: {
-         rich_text: [
-            {
-               text: {
-                  content: phonetic,
-               },
-            },
-         ],
-      },
-      Meaning: {
-         rich_text: [
-            {
-               text: {
-                  content: meanings[0].definitions[0].definition,
-               },
-            },
-         ],
-      },
-      Example: {
-         rich_text: [
-            {
-               text: {
-                  content: meanings[0].definitions[0].example,
-               },
-            },
-         ],
-      },
-      State: {
-         select: {
-            name: 'New',
-         },
-      },
-      Source: {
-         rich_text: [
-            {
-               text: {
-                  content: source.title,
-                  link: {
-                     url: source.url,
-                  },
-               },
-            },
-         ],
-      },
-   }
-   const children = []
-
-   // 添加词性和含义的文本块
-   meanings.forEach((meaning) => {
-      const partOfSpeech = meaning.partOfSpeech
-      children.push({
-         object: 'block',
-         type: 'paragraph',
-         paragraph: {
-            rich_text: [
-               {
-                  type: 'text',
-                  text: {
-                     content: partOfSpeech,
-                  },
-                  annotations: {
-                     italic: true,
-                     color: 'gray',
-                  },
-               },
-            ],
-         },
+// save word to notion database
+app.post('/saveWord', async function (req, res) {
+   // 处理回调逻辑
+   if (req.cookies && req.cookies.accessToken) {
+      console.log('use Cookie access token')
+      // 返回响应或执行其他操作
+      saveWord(req.body, req.cookies.accessToken, req.cookies.databaseId).then(
+         (state) => res.json(state),
+      )
+   } else {
+      //
+      console.log('redirect to get access')
+      const authParams = new URLSearchParams({
+         client_id: clientId,
+         redirect_uri: redirectUri,
+         response_type: 'code',
+         owner: 'user',
       })
-
-      const definitions = meaning.definitions
-      definitions.forEach((definition, index) => {
-         const definitionText = definition.definition
-         const exampleText = definition.example
-         children.push({
-            object: 'block',
-            type: 'numbered_list_item',
-            numbered_list_item: {
-               rich_text: [
-                  {
-                     type: 'text',
-                     text: {
-                        content: `${definitionText}\n`,
-                     },
-                  },
-                  {
-                     type: 'text',
-                     text: {
-                        content: exampleText,
-                     },
-                     annotations: {
-                        color: 'gray',
-                     },
-                  },
-               ],
-            },
-         })
-      })
-   })
-   // 在项的详情中添加音频链接
-   if (audioSrc) {
-      if (audioSrc.endsWith('.mp3')) {
-         // 在项的详情中添加空行
-         children.push({
-            object: 'block',
-            type: 'paragraph',
-            paragraph: {
-               rich_text: [
-                  {
-                     type: 'text',
-                     text: {
-                        content: '',
-                     },
-                  },
-               ],
-            },
-         })
-         children.push({
-            object: 'block',
-            type: 'audio',
-            audio: {
-               external: {
-                  url: audioSrc,
-               },
-            },
-         })
-      } else {
-         children.push({
-            object: 'block',
-            type: 'paragraph',
-            paragraph: {
-               rich_text: [
-                  {
-                     type: 'text',
-                     text: {
-                        content: 'voice link',
-                        link: {
-                           url: audioSrc,
-                        },
-                     },
-                  },
-               ],
-            },
-         })
-      }
-   }
-   // console.log(properties, children)
-   try {
-      const start = performance.now()
-      await notion.pages.create({
-         parent: {
-            type: 'database_id',
-            database_id: DATABASE_ID,
-         },
-         properties: properties,
-         icon: {
-            type: 'emoji', // 使用内置的表情符号
-            emoji: '🐣', // 内置的孵化小鸡图标
-         },
-         children: children,
-      })
-      const end = performance.now()
-      console.log(end - start)
-      response.json({ message: 'success!' })
-   } catch (error) {
-      response.json({ message: 'error', error })
+      const authUrl = `https://api.notion.com/v1/oauth/authorize?${authParams}`
+      res.redirect(authUrl)
    }
 })
 
@@ -245,5 +67,4 @@ app.post('/saveWord', async function (request, response) {
 app.listen(port, function () {
    console.log('Your app is listening on port ' + port)
 })
-
 module.exports = app
