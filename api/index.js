@@ -71,11 +71,16 @@ app.post('/saveWord', async function (req, res) {
    if (req.cookies && req.cookies.accessToken) {
       console.log('use Cookie access token')
       // 返回响应或执行其他操作
-      saveWord(req.body, req.cookies.accessToken, req.cookies.databaseId).then(
-         (state) => res.json(state),
-      )
+      saveWord(req.body, req.cookies.accessToken, req.cookies.databaseId)
+         .then((state) => {
+            res.json(state)
+         })
+         .catch((error) => {
+            console.log(error)
+            res.json({ message: 'error' })
+         })
    } else {
-      //
+      // redirect if no cookie find
       console.log('redirect to get access')
       const authParams = new URLSearchParams({
          client_id: NOTION_CLIENT_ID,
