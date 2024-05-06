@@ -40,6 +40,7 @@ async function getOauth(req) {
 
    //if user choose a template id
    if (templateId) {
+      console.log('use template id', templateId)
       return {
          accessToken,
          botId,
@@ -48,7 +49,7 @@ async function getOauth(req) {
          ok: true,
       }
    }
-
+   console.log('not find template id')
    // if not choose template id
    let pageId, databaseId
    try {
