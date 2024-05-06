@@ -29,13 +29,27 @@ async function getOauth(req) {
    })
 
    const data = await response.json()
-   //get user page
+   //get oauth infomation data
    const accessToken = data.access_token
    const workspaceId = data.workspace_id
    const botId = data.bot_id
+   const templateId = data.duplicated_template_id
    const notion = new Client({
       auth: accessToken,
    })
+
+   //if user choose a template id
+   if (templateId) {
+      return {
+         accessToken,
+         botId,
+         workspaceId,
+         databaseId: templateId,
+         ok: true,
+      }
+   }
+
+   // if not choose template id
    let pageId, databaseId
    try {
       // 调用 Notion API 搜索页面
