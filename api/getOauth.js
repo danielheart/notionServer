@@ -36,7 +36,7 @@ async function getOauth(req) {
    const templateId = data.duplicated_template_id
 
    //if user choose a template id
-   if (templateId || true) {
+   if (templateId !== null) {
       console.log('use template id', templateId)
       return {
          accessToken,
