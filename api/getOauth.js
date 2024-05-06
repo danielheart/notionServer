@@ -34,12 +34,9 @@ async function getOauth(req) {
    const workspaceId = data.workspace_id
    const botId = data.bot_id
    const templateId = data.duplicated_template_id
-   const notion = new Client({
-      auth: accessToken,
-   })
 
    //if user choose a template id
-   if (templateId) {
+   if (templateId || true) {
       console.log('use template id', templateId)
       return {
          accessToken,
@@ -52,6 +49,10 @@ async function getOauth(req) {
    console.log('not find template id')
    // if not choose template id
    let pageId, databaseId
+   const notion = new Client({
+      auth: accessToken,
+   })
+
    try {
       // 调用 Notion API 搜索页面
       const response = await notion.search({
