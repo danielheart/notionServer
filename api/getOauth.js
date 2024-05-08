@@ -27,7 +27,13 @@ async function getOauth(req) {
          redirect_uri: NOTION_REDIRECT_URI,
       }),
    })
-   return { ok: false, message: response }
+
+   if (response.status === 400) {
+      return {
+         message: 'validation error',
+         ok: false,
+      }
+   }
 
    const data = await response.json()
    //get oauth infomation data
