@@ -19,8 +19,6 @@ app.use(cookieParser())
 const {
    NOTION_CLIENT_ID,
    NOTION_REDIRECT_URI,
-   KV_REST_API_URL,
-   KV_REST_API_TOKEN,
 } = process.env
 
 // homepage: dictionary.danielhe.art

@@ -1,4 +1,9 @@
 {
    "version": 2,
-   "rewrites": [{ "source": "/(.*)", "destination": "/api" }]
+   "rewrites": [{ "source": "/(.*)", "destination": "/api" }],
+   "functions": {
+      "api/getOauth.js": {
+         "maxDuration": 300
+      }
+   }
 }
