@@ -63,7 +63,7 @@ app.get('/redirect', async function (req, res) {
          .send(html)
       console.log('Cookie generated successfully')
    } else {
-      res.send(result.message)
+      res.json(result.message)
    }
 })
 
