@@ -26,10 +26,11 @@ async function getOauth(req) {
          code: code,
          redirect_uri: NOTION_REDIRECT_URI,
       }),
-   }).catch((error) => {
-      return { ok: false, message: error }
    })
-
+   if (!response.ok) {
+      const data = await response.json()
+      return data
+   }
    const data = await response.json()
    //get oauth infomation data
    const accessToken = data.access_token
