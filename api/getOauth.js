@@ -27,15 +27,14 @@ async function getOauth(req) {
          redirect_uri: NOTION_REDIRECT_URI,
       }),
    })
-
-   if (response.status === 400) {
+   const data = await response.json()
+   if (response.status !== 200) {
       return {
-         message: 'validation error',
+         message: data.error_description,
          ok: false,
       }
    }
 
-   const data = await response.json()
    //get oauth infomation data
    const accessToken = data.access_token
    const workspaceId = data.workspace_id
@@ -43,8 +42,7 @@ async function getOauth(req) {
    const templateId = data.duplicated_template_id
 
    //if user choose a template id
-   if (templateId !== null) {
-      console.log('use template id', templateId)
+   if (templateId) {
       return {
          accessToken,
          botId,
