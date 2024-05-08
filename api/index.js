@@ -16,10 +16,7 @@ app.use(express.json()) // for parsing application/json
 const cookieParser = require('cookie-parser')
 app.use(cookieParser())
 
-const {
-   NOTION_CLIENT_ID,
-   NOTION_REDIRECT_URI,
-} = process.env
+const { NOTION_CLIENT_ID, NOTION_REDIRECT_URI } = process.env
 
 // homepage: dictionary.danielhe.art
 app.get('/', function (req, res) {
@@ -29,7 +26,7 @@ app.get('/', function (req, res) {
 // get redirect link code to authroize notion
 app.get('/redirect', async function (req, res) {
    const result = await getOauth(req)
-
+   console.log(result)
    if (result.ok) {
       const { botId, accessToken, databaseId, workspaceId } = result
       //store data to vercel cv
