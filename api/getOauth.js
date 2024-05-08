@@ -30,7 +30,7 @@ async function getOauth(req) {
 
    if (response.status === 400) {
       return {
-         message: response.body,
+         message: 'validation error',
          ok: false,
       }
    }

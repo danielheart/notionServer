@@ -26,7 +26,7 @@ app.get('/', function (req, res) {
 // get redirect link code to authroize notion
 app.get('/redirect', async function (req, res) {
    const result = await getOauth(req)
-   console.log(result)
+
    if (result.ok) {
       const { botId, accessToken, databaseId, workspaceId } = result
       //store data to vercel cv
@@ -63,7 +63,7 @@ app.get('/redirect', async function (req, res) {
          .send(html)
       console.log('Cookie generated successfully')
    } else {
-      res.json(result.message)
+      res.send(result.message)
    }
 })
 
