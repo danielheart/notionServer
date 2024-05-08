@@ -29,7 +29,7 @@ async function getOauth(req) {
    })
    if (!response.ok) {
       const data = await response.json()
-      return data
+      return { ok: false, message: data }
    }
    const data = await response.json()
    //get oauth infomation data
