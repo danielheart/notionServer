@@ -42,7 +42,7 @@ async function getOauth(req) {
    const templateId = data.duplicated_template_id
 
    //if user choose a template id
-   if (templateId !== null) {
+   if (templateId) {
       return {
          accessToken,
          botId,
