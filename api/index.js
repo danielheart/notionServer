@@ -40,6 +40,7 @@ app.get('/redirect', async function (req, res) {
         <body>
           <h1>Congratulations</h1>
           <p>Authorize Notion successfully!</p>
+          <p>(This window will be closed in 3 second)</p>
           <script>
                var extensionId = 'deaiipjieiccllhfmlnblcnjlegopdka'
                chrome.runtime.sendMessage(
