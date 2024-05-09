@@ -49,6 +49,9 @@ app.get('/redirect', async function (req, res) {
                      console.log(response)
                   },
                )
+               setTimeout(function() {
+                  window.close()
+                }, 3000)
           </script>
         </body>
       </html>
