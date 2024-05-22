@@ -20,7 +20,7 @@ const { NOTION_CLIENT_ID, NOTION_REDIRECT_URI } = process.env
 
 // homepage: dictionary.danielhe.art
 app.get('/', function (req, res) {
-   res.sendFile(path.join(__dirname, '..', 'components', 'home.htm'))
+   res.sendFile(path.join(__dirname, '..', 'components', 'home.html'))
 })
 
 // get redirect link code to authroize notion
